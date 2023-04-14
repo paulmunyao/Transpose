@@ -3,7 +3,7 @@ from django.utils import timezone
 from django.db import transaction
 
 from django.contrib.auth.models import (
-    AbstractBaseUser, PermissionsMixin, BaseUserManager)
+    AbstractBaseUser, PermissionsMixin, BaseUserManager, Group, Permission)
 
 
 class UserManager(BaseUserManager):
@@ -31,14 +31,21 @@ class UserManager(BaseUserManager):
         return self.create_superuser(email, password, **extra_fields)
 
 
-class User(AbstractBaseUser, PermissionsMixin):
+class CustomUser(AbstractBaseUser, PermissionsMixin):
     email = models.EmailField(max_length=50, unique=True)
     first_name = models.CharField(max_length=50, blank=True)
     last_name = models.CharField(max_length=50, blank=True)
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=True)
     date_joined = models.DateTimeField(default=timezone.now)
-    user_groups = models.ManyToManyField('auth.Group', related_name='user_set', blank=True)
+    groups = models.ManyToManyField(
+        Group, verbose_name='groups', blank=True,
+        related_name='customuser_set'  # set a different related name for groups
+    )
+    user_permissions = models.ManyToManyField(
+        Permission, verbose_name='user permissions', blank=True,
+        related_name='customuser_set'  # set a different related name for user permissions
+    )
 
     objects = UserManager()
 
@@ -46,5 +53,5 @@ class User(AbstractBaseUser, PermissionsMixin):
     REQUIRED_FIELDS = ['first_name', 'last_name']
 
     def save(self, *args, **kwargs):
-        super(User, self).save(*args, **kwargs)
+        super(CustomUser, self).save(*args, **kwargs)
         return self
