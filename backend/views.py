@@ -1,8 +1,10 @@
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
-from rest_framework import generics
+from rest_framework_simplejwt.tokens import RefreshToken
+from django.contrib.auth import authenticate
+from rest_framework import generics, status
+from rest_framework.views import APIView
 from rest_framework.authtoken.models import Token
-from rest_framework.permissions import IsAuthenticated
 from .serializers import RegisterSerializer, UserSerializer
 # from django.contrib.auth.models import User
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
@@ -48,10 +50,23 @@ class RegisterUser(generics.GenericAPIView):
         token, created = Token.objects.get_or_create(user=user)
         return Response({
             "user": UserSerializer(user, context=self.get_serializer_context()).data,
-            "token": token.key,
+            "token": Token.key,
             "message": "User created successfully",
         })
 
-# class LoginUser(generics.GenericAPIView):
-#     permission_classes = (IsAuthenticated,)
 
+class LoginUser(APIView):
+    serializer_class = UserSerializer
+
+    def post(self, request, *args, **kwargs):
+        email = request.data.get('email')
+        password = request.data.get('password')
+        user = authenticate(email=email, password=password)
+        if user:
+            refresh = RefreshToken.for_user(user)
+            return Response({
+                'refresh': str(refresh),
+                'access': str(refresh.access_token),
+            })
+        else:
+            return Response({'error': 'Invalid credentials'}, status=status.HTTP_401_UNAUTHORIZED)
