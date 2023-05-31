@@ -117,7 +117,7 @@ WSGI_APPLICATION = 'transpose.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'usersdb',
+        'NAME': 'transpose',
         'USER': 'mutiso',
         'PASSWORD': 'adidas19',
         'HOST': 'localhost',
