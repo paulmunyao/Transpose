@@ -1,12 +1,15 @@
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
+from rest_framework.views import APIView
 from rest_framework import generics, status
 from rest_framework.authtoken.models import Token
+# from rest_framework.authtoken.views import ObtainAuthToken
 from .serializers import RegisterSerializer, UserSerializer
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework_simplejwt.views import TokenObtainPairView
 from .models import User
 from django.contrib.auth.hashers import make_password
+from django.contrib.auth import authenticate
 
 
 class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
@@ -69,18 +72,18 @@ class RegisterUser(generics.GenericAPIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-# class LoginUser(APIView):
-#     serializer_class = UserSerializer
+class LoginUser(APIView):
+    serializer_class = UserSerializer
 
-#     def post(self, request, *args, **kwargs):
-#         email = request.data.get('email')
-#         password = request.data.get('password')
-#         user = authenticate(email=email, password=password)
-#         if user is not None:
-#             refresh = RefreshToken.for_user(user)
-#             return Response({
-#                 'refresh': str(refresh),
-#                 'access': str(refresh.access_token),
-#             })
-#         else:
-#             return Response({'error': 'Invalid credentials'}, status=status.HTTP_401_UNAUTHORIZED)
+    def post(self, request, *args, **kwargs):
+        payload = request.data
+        email = request.data.get('email')
+        password = request.data.get('password')
+        if email is not None:
+            return Response({"username is required"}, status=status.HTTP_400_BAD_REQUEST)
+        if password is not None:
+            return Response({'password required'}, status=status.HTTP_401_UNAUTHORIZED)
+            email = payload["email"]
+            password = payload["password"]
+            user = authenticate(email=email, password=password)
+            # is_authenticated = authenticate(email = email, password = password)
