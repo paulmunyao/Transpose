@@ -85,5 +85,4 @@ class LoginUser(APIView):
             return Response({'password required'}, status=status.HTTP_401_UNAUTHORIZED)
             email = payload["email"]
             password = payload["password"]
-            user = authenticate(email=email, password=password)
-            # is_authenticated = authenticate(email = email, password = password)
+            is_authenticated = authenticate(email = email, password = password)
