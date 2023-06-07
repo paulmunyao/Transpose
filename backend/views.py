@@ -85,9 +85,7 @@ class LoginUser(APIView):
             return Response({'password required'}, status=status.HTTP_401_UNAUTHORIZED)
         username = payload["username"]
         password = payload["password"]
-        is_authenticated = authenticate(
-            username=username, password=password)
-        if is_authenticated:
-            return Response(is_authenticated, status=status.HTTP_200_OK)
-        else:
-            return Response("Failed to Authenticate check credentials again", status=status.HTTP_404_NOT_FOUND)
+        user = User.objects.get(username=username,password=password)
+        # is_authenticated = authenticate(
+        #     username=username, password=password)
+        return Response(request, user)
