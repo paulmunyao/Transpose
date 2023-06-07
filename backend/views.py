@@ -77,12 +77,17 @@ class LoginUser(APIView):
 
     def post(self, request, *args, **kwargs):
         payload = request.data
-        email = request.data.get('email')
+        username = request.data.get('username')
         password = request.data.get('password')
-        if email is not None:
+        if username is None:
             return Response({"username is required"}, status=status.HTTP_400_BAD_REQUEST)
-        if password is not None:
+        elif password is None:
             return Response({'password required'}, status=status.HTTP_401_UNAUTHORIZED)
-            email = payload["email"]
-            password = payload["password"]
-            is_authenticated = authenticate(email = email, password = password)
+        username = payload["username"]
+        password = payload["password"]
+        is_authenticated = authenticate(
+            username=username, password=password)
+        if is_authenticated:
+            return Response(is_authenticated, status=status.HTTP_200_OK)
+        else:
+            return Response("Failed to Authenticate check credentials again", status=status.HTTP_404_NOT_FOUND)
