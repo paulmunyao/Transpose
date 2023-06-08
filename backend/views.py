@@ -80,12 +80,18 @@ class LoginUser(APIView):
         username = request.data.get('username')
         password = request.data.get('password')
         if username is None:
-            return Response({"username is required"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "username is required"}, status=status.HTTP_400_BAD_REQUEST)
         elif password is None:
-            return Response({'password required'}, status=status.HTTP_401_UNAUTHORIZED)
+            return Response({"error": "password required"}, status=status.HTTP_401_UNAUTHORIZED)
         username = payload["username"]
         password = payload["password"]
-        user = User.objects.get(username=username,password=password)
-        # is_authenticated = authenticate(
-        #     username=username, password=password)
-        return Response(request, user)
+        user = User.objects.filter(username=username).first()
+        if user is None or not user.check_password(password):
+            return Response({"error": "Username is required"}, status=status.HTTP_400_BAD_REQUEST)
+
+        is_authenticated = authenticate(username=username, password=password)
+        print(is_authenticated)
+        if is_authenticated is None:
+            return Response("Login successful", status=status.HTTP_200_OK)
+        else:
+            return Response({"error": "Login failed"}, status=status.HTTP_401_UNAUTHORIZED)
