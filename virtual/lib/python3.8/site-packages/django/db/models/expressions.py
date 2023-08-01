@@ -1181,7 +1181,9 @@ class Ref(Expression):
         return {self.refs}
 
     def relabeled_clone(self, relabels):
-        return self
+        clone = self.copy()
+        clone.source = self.source.relabeled_clone(relabels)
+        return clone
 
     def as_sql(self, compiler, connection):
         return connection.ops.quote_name(self.refs), []
@@ -1506,6 +1508,7 @@ class Subquery(BaseExpression, Combinable):
     template = "(%(subquery)s)"
     contains_aggregate = False
     empty_result_set_value = None
+    subquery = True
 
     def __init__(self, queryset, output_field=None, **extra):
         # Allow the usage of both QuerySet and sql.Query objects.

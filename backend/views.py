@@ -2,14 +2,17 @@ from rest_framework.response import Response
 from rest_framework.decorators import api_view
 from rest_framework.views import APIView
 from rest_framework import generics, status
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.authtoken.models import Token
-# from rest_framework.authtoken.views import ObtainAuthToken
 from .serializers import RegisterSerializer, UserSerializer
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework_simplejwt.views import TokenObtainPairView
+import jwt
 from .models import User
-from django.contrib.auth.hashers import make_password
+from django.contrib.auth.hashers import make_password,check_password
 from django.contrib.auth import authenticate
+from datetime import datetime, timedelta
+from django.conf import settings
 
 
 class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
@@ -28,7 +31,6 @@ class MyTokenObtainPairView(TokenObtainPairView):
     serializer_class = MyTokenObtainPairSerializer
 
 
-@api_view(["GET"])
 def getRoutes(request):
     routes = [
         "api/token",
@@ -66,32 +68,40 @@ class RegisterUser(generics.GenericAPIView):
                        "password": hashedPassword,
                        "is_active": True,
                        "is_staff": False}
-            user = User.objects.create(**newUser)
+            user = User.objects.create_user(newUser)
             info = {"Success": "User created successfully"}
             return Response(info, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-
 class LoginUser(APIView):
     serializer_class = UserSerializer
-
     def post(self, request, *args, **kwargs):
         payload = request.data
-        username = request.data.get('username')
-        password = request.data.get('password')
+        username = payload['username']
+        password = payload['password']
         if username is None:
-            return Response({"error": "username is required"}, status=status.HTTP_400_BAD_REQUEST)
-        elif password is None:
-            return Response({"error": "password required"}, status=status.HTTP_401_UNAUTHORIZED)
-        username = payload["username"]
-        password = payload["password"]
-        user = User.objects.filter(username=username).first()
-        if user is None or not user.check_password(password):
             return Response({"error": "Username is required"}, status=status.HTTP_400_BAD_REQUEST)
+        if password is None:
+            return Response({"error": "Password is required"}, status=status.HTTP_400_BAD_REQUEST)
+            
+        try:
+            user = User.objects.get(username=username)
+        except Exception as e:
+            return Response({"error":"User with the given username doesn't exists"},status=status.HTTP_400_BAD_REQUEST)
 
-        is_authenticated = authenticate(username=username, password=password)
-        print(is_authenticated)
-        if is_authenticated is None:
-            return Response("Login successful", status=status.HTTP_200_OK)
+        is_authenticated = check_password(password,user.password)
+        if is_authenticated:
+            payload = {
+                'id': user.id,
+                'username': user.username,
+                'exp': datetime.utcnow() + timedelta(minutes=10),
+                'iat': datetime.utcnow()
+            }
+            token = jwt.encode(payload, settings.SECRET_KEY)
+            response_info = {
+                "token": token
+            }
+            return Response(response_info, status=status.HTTP_200_OK)
+            return Response({"success": "Authentication successful"}, status=status.HTTP_200_OK)
         else:
-            return Response({"error": "Login failed"}, status=status.HTTP_401_UNAUTHORIZED)
+            return Response({"error": "Invalid username or password"}, status=status.HTTP_401_UNAUTHORIZED)
